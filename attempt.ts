@@ -39,27 +39,34 @@ type dbType = {
 
 
 async function initSession(db: dbType ,sessionId: string) {
-    const session = await db.getSession(sessionId);
-    if (!session) {
-        throw new Error("Session not found");
+    try {
+        return await db.getSession(sessionId);
+    } catch (error) {
+        throw new Error("Failed to retrieve session");
     }
-    return session;
 }
 
 function setupConfig() { // a good practice is to setup config per environment
-    return { timeout: process.env.SESSION_TIMEOUT}
+    return { timeout: process.env.SESSION_TIMEOUT || 86400 } // 24hours default
 }
 
 
 async function clearSession({sessionId}, db, now) {
-    await db.deleteSession(sessionId);
-    await db.addLog({ sessionId, logTimestamp: now, message: "Session expired" });
+    try {
+        await db.deleteSession(sessionId),
+        await db.addLog({ sessionId, logTimestamp: now, message: "Session expired" })
+    } catch (error) {
+        throw new Error("Failed to delete expired session");
+    }
 }
 async function refreshSession(session: Session, db: dbType, now: number) {
-    session.lastActivityTimestamp = now;
-    await db.updateSession(session);
-    const { sessionId } = session;
-    await db.addLog({ sessionId, logTimestamp: now, message: "Session updated" });
+    try {
+        session.lastActivityTimestamp = now;
+        await db.updateSession(session),
+        await db.addLog({ sessionId: session.sessionId, logTimestamp: now, message: "Session updated" })
+    } catch (error) {
+        throw new Error("Failed to refresh session");
+    }
 }
 
 async function handleSessions(db: dbType, sessionId: string, {timeout}) {
