@@ -43,6 +43,7 @@ async function initSession(db: dbType, sessionId: string) {
     }
 }
 
+// delete session
 async function clearSession(session: Session, db: dbType, timestamp: number) {
     try {
         if (!session.isActive) return; // If already inactive, no need to delete
@@ -53,6 +54,7 @@ async function clearSession(session: Session, db: dbType, timestamp: number) {
     }
 }
 
+// update session
 async function refreshSession(session: Session, db: dbType, timestamp: number) {
     try {
         session.lastActivityTimestamp = timestamp;
