@@ -43,10 +43,11 @@ async function initSession(db: dbType, sessionId: string) {
     }
 }
 
-async function clearSession({ sessionId }, db: dbType, timestamp: number) {
+async function clearSession(session: Session, db: dbType, timestamp: number) {
     try {
-        await db.deleteSession(sessionId);
-        await logResult(db, { sessionId, logTimestamp: timestamp, message: "Session expired" })
+        if (!session.isActive) return; // If already inactive, no need to delete
+        await db.deleteSession(session.sessionId);
+        await logResult(db, { sessionId:session.sessionId, logTimestamp: timestamp, message: "Session expired" })
     } catch (error) {
         throw new Error(`Failed to clear session due to: ${error.message}`);
     }
