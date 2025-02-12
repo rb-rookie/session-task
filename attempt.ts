@@ -23,7 +23,7 @@ async function logResult(db: dbType, { sessionId, logTimestamp, message }: Log) 
     try {
         await db.addLog({ sessionId, logTimestamp, message });
     } catch (error) {
-        throw new Error(`Failed to write Log: ${message}`);
+        throw new Error(`Failed to write Log: ${message} due to: ${error.message} `);
     }
 }
 
@@ -39,7 +39,7 @@ async function initSession(db: dbType, sessionId: string) {
     try {
         return await db.getSession(sessionId);
     } catch (error) {
-        throw new Error(`Failed to retrieve session due to: ${error}`);
+        throw new Error(`Failed to retrieve session due to: ${error.message}`);
     }
 }
 
@@ -48,7 +48,7 @@ async function clearSession({ sessionId }, db: dbType, timestamp: number) {
         await db.deleteSession(sessionId);
         await logResult(db, { sessionId, logTimestamp: timestamp, message: "Session expired" })
     } catch (error) {
-        throw new Error(`Failed to clear session due to: ${error}`);
+        throw new Error(`Failed to clear session due to: ${error.message}`);
     }
 }
 
@@ -58,7 +58,7 @@ async function refreshSession(session: Session, db: dbType, timestamp: number) {
         await db.updateSession(session);
         await logResult(db, { sessionId: session.sessionId, logTimestamp: timestamp, message: "Session updated" })
     } catch (error) {
-        throw new Error(`Failed to refresh session due to: ${error}`);
+        throw new Error(`Failed to refresh session due to: ${error.message}`);
     }
 }
 
@@ -69,9 +69,9 @@ async function handleSessions(db: dbType, sessionId: string, config) {
     const session = await initSession(db, sessionId);
     if (!session) {
         throw new Error("Session not found");
-        }
+    }
     const now = Date.now();
-    if (session && session.lastActivityTimestamp + timeout < now) {
+    if (session.lastActivityTimestamp + timeout < now) {
         await clearSession(session, db, now);
     } else {
         await refreshSession(session, db, now);
